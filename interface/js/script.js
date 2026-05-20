@@ -219,7 +219,7 @@ function updateGamepad(){
     }
     else if(select && !previousState.select){
         previousState.select = true;
-        if (!ir_state) {    console.log(pwm);
+        if (!ir_state) {
             camera_control(IR, LEDS_ON);
             ir_state = true;
         } else {
