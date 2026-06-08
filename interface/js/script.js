@@ -53,6 +53,13 @@ const LEDS_OFF = 1;
 const LEDS_ON = 0;
 let ir_state= false;
 
+let ptz_state = {
+    'up': false,
+    'down': false,
+    'left': false,
+    'right': false
+};
+
 function ptzCommand(cmd) {
     var url;
     url='http://192.168.0.201:81/decoder_control.cgi?';
@@ -120,10 +127,10 @@ function updateGamepad(){
     // BOTÕES
     //////////////////////////////////////////////////////
 
-    const b1 = gp.buttons[0].pressed;
-    const b2 = gp.buttons[1].pressed;
-    const b3 = gp.buttons[2].pressed;
-    const b4 = gp.buttons[3].pressed;
+    const b1 = gp.buttons[0].pressed || ptz_state.up;
+    const b2 = gp.buttons[1].pressed || ptz_state.right;
+    const b3 = gp.buttons[2].pressed || ptz_state.down;
+    const b4 = gp.buttons[3].pressed || ptz_state.left;
     const start = gp.buttons[9].pressed;
     const select = gp.buttons[8].pressed;
     const l1 = gp.buttons[4].pressed;
@@ -335,6 +342,69 @@ function updateGamepad(){
 
     const rightX = gp.axes[3]
     const rightY = gp.axes[2];
+
+    // frente
+    if (rightY < -DEADZONE && rightX <= DEADZONE && rightX >= -DEADZONE) {
+        ptz_state.up = true;
+        ptz_state.down = false;
+        ptz_state.left = false;
+        ptz_state.right = false;
+    } 
+    // trás
+    else if (rightY > DEADZONE && rightX <= DEADZONE && rightX >= -DEADZONE) {
+        ptz_state.down = true;
+        ptz_state.up = false;
+        ptz_state.left = false;
+        ptz_state.right = false;
+    }
+    // direita
+    else if(rightY <= DEADZONE && rightY >= -DEADZONE && rightX > DEADZONE){
+        ptz_state.right = true;
+        ptz_state.up = false;
+        ptz_state.down = false;
+        ptz_state.left = false;
+    }
+    // esquerda
+    else if(rightY <= DEADZONE && rightY >= -DEADZONE && rightX < -DEADZONE){
+        ptz_state.left = true;
+        ptz_state.up = false;
+        ptz_state.down = false;
+        ptz_state.right = false;
+    }
+    // esquerda frente
+    else if(rightY < -DEADZONE && rightX < -DEADZONE){  
+        ptz_state.up = true;
+        ptz_state.left = true;
+        ptz_state.down = false;
+        ptz_state.right = false;
+    }
+    // esquerda trás
+    else if(rightY > DEADZONE && rightX < -DEADZONE){   
+        ptz_state.down = true;
+        ptz_state.left = true;
+        ptz_state.up = false;
+        ptz_state.right = false;
+    }
+    // direita frente
+    else if(rightY < -DEADZONE && rightX > DEADZONE){
+        ptz_state.up = true;
+        ptz_state.right = true;
+        ptz_state.down = false;
+        ptz_state.left = false;
+    }
+    // direita trás
+    else if(rightY > DEADZONE && rightX > DEADZONE){   
+        ptz_state.down = true;
+        ptz_state.right = true;
+        ptz_state.up = false;
+        ptz_state.left = false;
+    }
+    else if (rightY <= DEADZONE && rightY >= -DEADZONE && rightX <= DEADZONE && rightX >= -DEADZONE){
+        ptz_state.up = false;
+        ptz_state.down = false;
+        ptz_state.left = false;
+        ptz_state.right = false;
+    }
 
 
 
