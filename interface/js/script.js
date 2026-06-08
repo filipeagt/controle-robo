@@ -2,7 +2,25 @@
 // CONFIG
 //////////////////////////////////////////////////////
 
-const socket = new WebSocket("ws://192.168.0.200:81");
+let socket
+
+function conectar() {
+    socket = new WebSocket("ws://192.168.0.200:81");
+
+    socket.onopen = () => {
+        console.log("WebSocket conectado");
+    };
+
+    socket.onclose = () => {
+        setTimeout(conectar, 1000);
+    };
+
+    socket.onerror = () => {
+        socket.close();
+    };
+}
+
+conectar();
 
 // PWM máximo
 const PWM_MAX = 1023;
