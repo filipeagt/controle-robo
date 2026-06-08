@@ -78,7 +78,7 @@ function camera_control(param,value) {
 function mapAxis(value){
 
     // remove ruído do centro
-    if(Math.abs(value) < DEADZONE){
+    if(Math.abs(value) <= DEADZONE){
         return 0;
     }
 
@@ -260,56 +260,83 @@ function updateGamepad(){
     }
 
     //////////////////////////////////////////////////////
-    // ANALÓGICO ESQUERDO (eixo Y = axis 1)
+    // ANALÓGICO ESQUERDO (eixo Y = axis 1) (eixo X = axis 0)
     //////////////////////////////////////////////////////
 
+    const leftX = gp.axes[0]
     const leftY = gp.axes[1];
 
     // frente
-    if(leftY < -DEADZONE){
-
+    if (leftY < -DEADZONE && leftX <= DEADZONE && leftX >= -DEADZONE) {
+        pwm[1] = 0;
+        pwm[3] = 0;
         pwm[0] = mapAxis(leftY);
-        pwm[1] = 0;
-
-    }
+        pwm[2] = mapAxis(leftY);
+    } 
     // trás
-    else if(leftY > DEADZONE){
-
+    else if (leftY > DEADZONE && leftX <= DEADZONE && leftX >= -DEADZONE) {
         pwm[0] = 0;
+        pwm[2] = 0;
         pwm[1] = mapAxis(leftY);
-
+        pwm[3] = mapAxis(leftY);
     }
-    else{
-
+    // direita
+    else if(leftY <= DEADZONE && leftY >= -DEADZONE && leftX > DEADZONE){
+        pwm[1] = 0;
+        pwm[2] = 0;
+        pwm[0] = mapAxis(leftX);
+        pwm[3] = mapAxis(leftX);
+    }
+    // esquerda
+    else if(leftY <= DEADZONE && leftY >= -DEADZONE && leftX < -DEADZONE){
+        pwm[0] = 0;
+        pwm[3] = 0;
+        pwm[1] = mapAxis(leftX);
+        pwm[2] = mapAxis(leftX);
+    }
+    // esquerda frente
+    else if(leftY < -DEADZONE && leftX < -DEADZONE){  
+        pwm[0] = 0;  
+        pwm[1] = 0;
+        pwm[3] = 0;
+        pwm[2] = mapAxis(leftX);
+    }
+    // esquerda trás
+    else if(leftY > DEADZONE && leftX < -DEADZONE){   
+        pwm[0] = 0;
+        pwm[2] = 0; 
+        pwm[3] = 0;
+        pwm[1] = mapAxis(leftX);
+    }
+    // direita frente
+    else if(leftY < -DEADZONE && leftX > DEADZONE){
+        pwm[1] = 0;
+        pwm[2] = 0;
+        pwm[3] = 0;
+        pwm[0] = mapAxis(leftX);
+    }
+    // direita trás
+    else if(leftY > DEADZONE && leftX > DEADZONE){   
+        pwm[0] = 0;
+        pwm[1] = 0; 
+        pwm[2] = 0;
+        pwm[3] = mapAxis(leftX);
+    }
+    else if (leftY <= DEADZONE && leftY >= -DEADZONE && leftX <= DEADZONE && leftX >= -DEADZONE){
         pwm[0] = 0;
         pwm[1] = 0;
+        pwm[2] = 0;
+        pwm[3] = 0;
     }
 
     //////////////////////////////////////////////////////
-    // ANALÓGICO DIREITO (eixo Y = axis 2)
+    // ANALÓGICO DIREITO (eixo Y = axis 2) (eixo X = axis 3)
     //////////////////////////////////////////////////////
 
+    const rightX = gp.axes[3]
     const rightY = gp.axes[2];
 
-    // frente
-    if(rightY < -DEADZONE){
 
-        pwm[2] = mapAxis(rightY);
-        pwm[3] = 0;
-
-    }
-    // trás
-    else if(rightY > DEADZONE){
-
-        pwm[2] = 0;
-        pwm[3] = mapAxis(rightY);
-
-    }
-    else{
-
-        pwm[2] = 0;
-        pwm[3] = 0;
-    }
 
     //////////////////////////////////////////////////////
     // DIRECIONAIS (eixo Y = axis 5) (eixo X = axis 4)
