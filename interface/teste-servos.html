@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle de 4 Servos</title>
+
+<style>
+body{
+    font-family: Arial;
+    max-width:600px;
+    margin:auto;
+}
+
+pre{
+    font-size:18px;
+}
+</style>
+</head>
+<body>
+
+<h1>Controle por Joystick</h1>
+
+<h2 id="status">Aguardando controle...</h2>
+
+<pre id="valores"></pre>
+
+<script>
+
+let socket;
+
+function conectar() {
+
+    socket = new WebSocket("ws://192.168.0.200:81");
+
+    socket.binaryType = "arraybuffer";
+
+    socket.onopen = () => {
+        status.innerHTML = "WebSocket conectado";
+    };
+
+    socket.onclose = () => {
+
+        status.innerHTML = "Reconectando...";
+
+        setTimeout(conectar,2000);
+    };
+
+    socket.onerror = () => {
+
+        socket.close();
+    };
+}
+
+conectar();
+
+/////////////////////////////////////////////////////
+
+const dados = new Uint16Array(4);
+
+function eixoParaServo(x){
+
+    // x varia entre -1 e +1
+
+    return Math.round(
+        1500 + x * 500
+    );
+}
+
+/////////////////////////////////////////////////////
+
+let ultimoEnvio = 0;
+
+function loop(timestamp){
+
+    if(timestamp - ultimoEnvio >= 20){
+
+        ultimoEnvio = timestamp;
+
+        const gp = navigator.getGamepads()[0];
+
+        if(gp){
+
+            // Analógico esquerdo
+            dados[0] = eixoParaServo(gp.axes[0]);
+            dados[1] = eixoParaServo(gp.axes[1]);
+
+            // Analógico direito
+            dados[2] = eixoParaServo(gp.axes[2]);
+            dados[3] = eixoParaServo(gp.axes[3]);
+
+            valores.innerHTML =
+                "Servo0 = " + dados[0] + " us\n" +
+                "Servo1 = " + dados[1] + " us\n" +
+                "Servo2 = " + dados[2] + " us\n" +
+                "Servo3 = " + dados[3] + " us";
+
+            if(socket &&
+               socket.readyState === WebSocket.OPEN){
+
+                socket.send(dados);
+            }
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+/////////////////////////////////////////////////////
+
+window.addEventListener("gamepadconnected", (e)=>{
+
+    status.innerHTML =
+        "Controle conectado: " +
+        e.gamepad.id;
+});
+
+window.addEventListener("gamepaddisconnected", ()=>{
+
+    status.innerHTML =
+        "Controle desconectado";
+});
+
+</script>
+
+</body>
+</html>

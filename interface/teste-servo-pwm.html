@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Joystick ESP8266</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    max-width:600px;
+    margin:auto;
+}
+
+pre{
+    font-size:18px;
+}
+
+</style>
+
+</head>
+<body>
+
+<h1>Controle ESP8266</h1>
+
+<h2 id="status">Desconectado</h2>
+
+<pre id="valores"></pre>
+
+<script>
+
+//////////////////////////////////////////////////////
+// WEBSOCKET
+//////////////////////////////////////////////////////
+
+let socket;
+
+function conectar(){
+
+    socket = new WebSocket("ws://192.168.0.200:81");
+
+    socket.binaryType = "arraybuffer";
+
+    socket.onopen = ()=>{
+
+        status.innerHTML = "Conectado";
+    };
+
+    socket.onclose = ()=>{
+
+        status.innerHTML = "Desconectado";
+
+        setTimeout(conectar,2000);
+    };
+
+    socket.onerror = ()=>{
+
+        socket.close();
+    };
+}
+
+conectar();
+
+//////////////////////////////////////////////////////
+
+const dados = new Uint16Array(4);
+
+//////////////////////////////////////////////////////
+// DEADZONE
+//////////////////////////////////////////////////////
+
+function deadzone(x){
+
+    if(Math.abs(x) < 0.1)
+        return 0;
+
+    return x;
+}
+
+//////////////////////////////////////////////////////
+// CONVERSÕES
+//////////////////////////////////////////////////////
+
+function eixoParaServo(x){
+
+    x = deadzone(x);
+
+    return Math.round(
+        1500 + x * 500
+    );
+}
+
+function eixoParaPWM(x){
+
+    x = deadzone(x);
+
+    return Math.round(
+        (x + 1) * 511.5
+    );
+}
+
+//////////////////////////////////////////////////////
+
+let ultimoEnvio = 0;
+
+function loop(timestamp){
+
+    if(timestamp - ultimoEnvio >= 20){
+
+        ultimoEnvio = timestamp;
+
+        const gp = navigator.getGamepads()[0];
+
+        if(gp){
+
+            //////////////////////////////////////////////////
+            // ANALÓGICO DIREITO
+            //////////////////////////////////////////////////
+
+            dados[0] = eixoParaServo(gp.axes[2]);
+
+            // invertido
+            dados[1] = eixoParaServo(-gp.axes[3]);
+
+            //////////////////////////////////////////////////
+            // ANALÓGICO ESQUERDO
+            //////////////////////////////////////////////////
+
+            dados[2] = eixoParaPWM(-gp.axes[1]);
+
+            dados[3] = eixoParaPWM(gp.axes[0]);
+
+            //////////////////////////////////////////////////
+
+            valores.innerHTML =
+                "Servo0 = " + dados[0] + "\n" +
+                "Servo1 = " + dados[1] + "\n" +
+                "PWM0 = " + dados[2] + "\n" +
+                "PWM1 = " + dados[3];
+
+            //////////////////////////////////////////////////
+
+            if(socket &&
+               socket.readyState === WebSocket.OPEN){
+
+                socket.send(dados);
+            }
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+//////////////////////////////////////////////////////
+
+window.addEventListener("gamepadconnected",(e)=>{
+
+    status.innerHTML =
+        "Controle conectado";
+});
+
+window.addEventListener("gamepaddisconnected",()=>{
+
+    status.innerHTML =
+        "Controle desconectado";
+});
+
+</script>
+
+</body>
+</html>
